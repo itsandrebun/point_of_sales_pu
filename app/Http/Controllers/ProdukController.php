@@ -25,11 +25,12 @@ class ProdukController extends Controller
     {
         $produk = Produk::leftJoin('kategori', 'kategori.id_kategori', 'produk.id_kategori')
             ->select('produk.*', 'nama_kategori')
+            ->where('produk.active',1)
             // ->orderBy('kode_produk', 'asc')
             ->get();
 
         for ($b=0; $b < count($produk); $b++) {
-        $produk[ $b]['image'] = asset($produk[$b]['image']); 
+            $produk[ $b]['image'] = asset($produk[$b]['image']); 
         }
 
         return datatables()
@@ -85,12 +86,31 @@ class ProdukController extends Controller
      */
     public function store(Request $request)
     {
-        $produk = Produk::latest()->first() ?? new Produk();
-        $request['kode_produk'] = 'P'. tambah_nol_didepan((int)$produk->id_produk +1, 6);
+        // $produk = Produk::latest()->first() ?? new Produk();
 
-        $produk = Produk::create($request->all());
+        $post_parameter = array(
+            "nama_produk" => $request->nama_produk,
+            "id_kategori" => $request->id_kategori,
+            "merk" => $request->merk,
+            "harga_jual" => $request->harga_jual,
+            "stok" => $request->stok 
+        );
 
-        return response()->json('Data berhasil disimpan', 200);
+        if($request->hasFile('image')){
+            $extension = strtolower($request->file('image')->getClientOriginalExtension());
+            $savedFilename = uniqid().'.'.$extension;
+            $request->image->move(public_path('img/products/'), $savedFilename);
+            $post_parameter['image'] = 'img/products/'.$savedFilename;
+        }
+        // 
+
+        $produk_id = Produk::create($post_parameter)->id_produk;
+
+        if($produk_id > 0){
+            $kode_produk = 'P'. tambah_nol_didepan((int)$produk_id +1, 6);    
+            Produk::find($produk_id)->update(['kode_produk' => $kode_produk]);
+        }
+        return redirect()->back();
     }
 
     /**
@@ -135,21 +155,14 @@ class ProdukController extends Controller
         "stok" => $request->stok 
     );
     if($request->hasFile('image')){
-        $filenamewithExt = $request->file('image')->getclientoriginalName();
-        $filename = pathinfo($filenamewithExt, PATHINFO_FILENAME);
         $extension = strtolower($request->file('image')->getClientOriginalExtension());
-        $savedFilename = $filename.'_'.uniqid().'.'.$extension;
-        $request->image->move(public_path('products/'), $savedFilename);
-        $post_parameter['image'] = 'products/'.$savedFilename;
+        $savedFilename = uniqid().'.'.$extension;
+        $request->image->move(public_path('img/products/'), $savedFilename);
+        $post_parameter['image'] = 'img/products/'.$savedFilename;
     }                                
-        $produk = Produk::find($id)->update($post_parameter);
-        return redirect()->back();
-           
-        // $produk = Produk::find($id);
-        // $produk->update($request->all());
-
-        // return response()->json('Data berhasil disimpan', 200);
-
+    
+    $produk = Produk::find($id)->update($post_parameter);
+    return redirect()->back();
 }
 
     /**
@@ -160,29 +173,21 @@ class ProdukController extends Controller
      */
     public function destroy($id)
     {
-        $produk = Produk::find($id);
-        $produk->delete();
+        $produk = Produk::find($id)->update(['active' => -1]);
 
         return response(null, 204);
     }
 
     public function deleteSelected(Request $request)
     {
-        foreach ($request->id_produk as $id) {
-            $produk = Produk::find($id);
-            $produk->delete();
-        }
+        Produk::whereIn('id_produk',$request->id_produk)->update(['active' => -1]);
 
         return response(null, 204);
     }
 
     public function cetakBarcode(Request $request)
     {
-        $dataproduk = array();
-        foreach ($request->id_produk as $id) {
-            $produk = Produk::find($id);
-            $dataproduk[] = $produk;
-        }
+        $dataproduk = Produk::whereIn('id_produk',$request->id_produk)->get();
 
         $no  = 1;
         $pdf = PDF::loadView('produk.barcode', compact('dataproduk', 'no'));

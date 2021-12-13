@@ -15,10 +15,10 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $kategori = Kategori::count();
-        $produk = Produk::count();
+        $kategori = Kategori::where('active',1)->count();
+        $produk = Produk::where('active',1)->count();
         $supplier = Supplier::count();
-        $member = Member::count();
+        $member = Member::where('active',1)->count();
 
         $tanggal_awal = date('Y-m-01');
         $tanggal_akhir = date('Y-m-d');

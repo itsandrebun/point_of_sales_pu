@@ -50,7 +50,7 @@
                             <div class="input-group">
                                 <input type="hidden" name="id_penjualan" id="id_penjualan" value="{{ $id_penjualan }}">
                                 <input type="hidden" name="id_produk" id="id_produk">
-                                <input type="text" class="form-control" name="kode_produk" id="kode_produk" disabled>
+                                <input type="text" class="form-control" name="kode_produk" id="kode_produk" readonly>
                                 <span class="input-group-btn">
                                     <button onclick="tampilProduk()" class="btn btn-info btn-flat" type="button"><i class="fa fa-arrow-right"></i></button>
                                 </span>
@@ -96,7 +96,7 @@
                                 <label for="kode_member" class="col-lg-2 control-label">Member</label>
                                 <div class="col-lg-8">
                                     <div class="input-group">
-                                        <input type="text" class="form-control" id="kode_member" value="{{ $memberSelected->kode_member }}" disabled>
+                                        <input type="text" class="form-control" id="kode_member" value="{{ $memberSelected->kode_member }}" readonly>
                                         <span class="input-group-btn">
                                             <button onclick="tampilMember()" class="btn btn-info btn-flat" type="button"><i class="fa fa-arrow-right"></i></button>
                                         </span>
@@ -104,9 +104,9 @@
                                 </div>
                             </div>
                             <div class="form-group row">
-                                <label for="point" class="col-lg-2 control-label">Availabe Point</label>
+                                <label for="point" class="col-lg-2 control-label">Available Point</label>
                                 <div class="col-lg-8">
-                                    <input type="text" id="point" name="point" class="form-control" value="#" disabled>
+                                    <input type="text" id="available_point" name="available_point" class="form-control" value="#" readonly>
                                 </div>
                             </div>
                             <!-- <div class="form-group row">
@@ -124,7 +124,7 @@
                                 </div>
                             </div>
                             <div class="form-group row">
-                                <label for="diterima" class="col-lg-2 control-label">Amount Recieved</label>
+                                <label for="diterima" class="col-lg-2 control-label">Amount Received</label>
                                 <div class="col-lg-8">
                                     <input type="number" id="diterima" class="form-control" name="diterima" value="{{ $penjualan->diterima ?? 0 }}">
                                 </div>
@@ -138,7 +138,7 @@
                             <div class="form-group row">
                                 <label for="point" class="col-lg-2 control-label">Rewarded Point</label>
                                 <div class="col-lg-8">
-                                    <input type="text" id="point" name="point" class="form-control" value="#" disabled>
+                                    <input type="text" id="rewarded_point" name="rewarded_point" class="form-control" value="#" readonly>
                                 </div>
                             </div>
 
@@ -157,7 +157,7 @@
                             <div class="form-group row">
                                 <label for="use_point" class="col-lg-2 control-label">Use Point?</label>
                                 <div class="col-lg-8">
-                                    <input type="checkbox" id="use_point" name="use_point" value="">
+                                    <input type="checkbox" id="use_point" name="use_point" value="1" disabled>
                                 </div>
                             </div>
 
@@ -168,7 +168,7 @@
             </div>
 
             <div class="box-footer">
-                <button type="submit" class="btn btn-primary btn-sm btn-flat pull-right btn-simpan"><i class="fa fa-floppy-o"></i> Proceed Payment</button>
+                <button type="submit" class="btn btn-primary btn-sm btn-flat pull-right btn-simpan" id="submitTransactionButton" disabled><i class="fa fa-floppy-o"></i> Proceed Payment</button>
             </div>
         </div>
     </div>
@@ -183,6 +183,10 @@
     let table, table2;
 
     $(function () {
+        setInterval(function(){
+            getPointPerMember();
+        }, 1000);
+
         $('body').addClass('sidebar-collapse');
 
         table = $('.table-penjualan').DataTable({
@@ -263,8 +267,19 @@
         });
 
         $('#diterima').on('input', function () {
+            console.log($(this).val());
             if ($(this).val() == "") {
                 $(this).val(0).select();
+                $('#submitTransactionButton').attr('disabled',true);
+            }else{
+                if($(this).val() >= parseInt($('#bayarrp').val().replace('Rp. ','').replace(/\./g, ""))){
+                    console.log('abababa');
+                    $('#submitTransactionButton').attr('disabled',false);
+                }else{
+                    console.log('cnccbcb');
+                    $('#submitTransactionButton').attr('disabled',true);
+                }                
+                
             }
 
             loadForm($('#diskon').val(), $(this).val());
@@ -275,6 +290,24 @@
         $('.btn-simpan').on('click', function () {
             $('.form-penjualan').submit();
         });
+
+        $('[name=use_point]').change(function(){
+            if(this.checked){
+                var original_price = parseInt($('#bayarrp').val().replace('Rp. ','').replace(/\./g, ""));
+                var point_amount = parseInt($('[name=available_point]').val());
+                $('.total').text(original_price - point_amount);
+                $('#bayarrp').val(original_price - point_amount);
+                $('#rewarded_point').val("#");
+                // console.log($('#bayarrp').val().replace('Rp. ','').replace(/\./g, ""));
+            }else{
+                // console.log('noooo');
+                var original_price = parseInt($('#bayarrp').val().replace('Rp. ','').replace(/\./g, ""));
+                var point_amount = parseInt($('[name=available_point]').val());                
+                $('.total').text(original_price + point_amount);
+                $('#bayarrp').val(original_price + point_amount);
+                $('#rewarded_point').val(Math.floor((original_price + point_amount) / 1000));
+            }
+        })
     });
 
     function tampilProduk() {
@@ -319,6 +352,7 @@
         $('#diskon').val('{{ $diskon }}');
         loadForm($('#diskon').val());
         $('#diterima').val(0).focus().select();
+        getPointByMember(id);
         hideMember();
     }
 
@@ -343,6 +377,13 @@
     }
 
     function loadForm(diskon = 0, diterima = 0) {
+        // console.log('bababa');
+        // var total = $('.total').text();
+        // if($('[name=available_point]').val() != "#" && $('[name=use_point]').attr('checked') == true){
+        //     total = $('.total').text() - $('[name=available_point]').val();
+        //     console.log(total);
+        //     $('.total').text(total);
+        // }
         $('#total').val($('.total').text());
         $('#total_item').val($('.total_item').text());
 
@@ -353,6 +394,7 @@
                 $('#bayar').val(response.bayar);
                 $('.tampil-bayar').text('Bayar: Rp. '+ response.bayarrp);
                 $('.tampil-terbilang').text(response.terbilang);
+                $('#rewarded_point').val(response.bayarrp.replace(/\./g, "")/1000);
 
                 $('#kembali').val('Rp.'+ response.kembalirp);
                 if ($('#diterima').val() != 0) {
@@ -364,6 +406,36 @@
                 alert('Tidak dapat menampilkan data');
                 return;
             })
+    }
+
+    function getPointPerMember(){
+        $.ajax({
+            "url" : "{{ route('point.get_point_per_member') }}",
+            "type" : "GET",
+            "success": function(data){
+                console.log(data);
+            }
+        });
+    }
+
+    function getPointByMember(member_id){
+        $.ajax({
+            "url" : "{{ route('point.get_point_by_member') }}"+"/"+member_id,
+            "type" : "GET",
+            "success": function(data){
+                
+                console.log(data);
+                if(data['total_point'] > 0){
+                    $('[name=available_point]').val(data['total_point']);
+                    $('[name=use_point]').attr('disabled',false);
+                    // loadForm($('#diskon').val(), $(this).val());
+                }else{
+                    $('[name=available_point]').val("#");
+                    $('[name=use_point]').attr('disabled',true);
+                    // loadForm($('#diskon').val(), $(this).val());
+                }
+            }
+        });
     }
 </script>
 @endpush

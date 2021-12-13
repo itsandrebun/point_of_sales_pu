@@ -21,7 +21,7 @@ class MemberController extends Controller
 
     public function data()
     {
-        $member = Member::orderBy('kode_member')->get();
+        $member = Member::orderBy('kode_member')->where('active',1)->get();
 
         return datatables()
             ->of($member)
@@ -123,8 +123,7 @@ class MemberController extends Controller
      */
     public function destroy($id)
     {
-        $member = Member::find($id);
-        $member->delete();
+        $member = Member::find($id)->update(['active' => -1]);
 
         return response(null, 204);
     }

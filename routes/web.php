@@ -15,6 +15,7 @@ use App\Http\Controllers\{
     SupplierController,
     UserController,
     PaymentMethodController,
+    PointController
 };
 use Illuminate\Support\Facades\Route;
 
@@ -89,6 +90,11 @@ Route::group(['middleware' => 'auth'], function () {
         Route::get('/transaksi/loadform/{diskon}/{total}/{diterima}', [PenjualanDetailController::class, 'loadForm'])->name('transaksi.load_form');
         Route::resource('/transaksi', PenjualanDetailController::class)
             ->except('create', 'show', 'edit');
+
+        Route::prefix('point')->group(function(){
+            Route::get('get_point_per_member',[PointController::class, 'get_point_per_member'])->name('point.get_point_per_member');
+            Route::get('get_point_by_member/{id?}',[PointController::class, 'get_point_by_member'])->name('point.get_point_by_member');
+        });
     });
 
     Route::group(['middleware' => 'level:1'], function () {

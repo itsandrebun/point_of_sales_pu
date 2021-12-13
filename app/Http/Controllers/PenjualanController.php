@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Penjualan;
 use App\Models\PenjualanDetail;
 use App\Models\Produk;
+use App\Models\Point;
 use App\Models\Setting;
 use App\Models\PaymentMethod;
 use Illuminate\Http\Request;
@@ -95,6 +96,15 @@ class PenjualanController extends Controller
             $produk = Produk::find($item->id_produk);
             $produk->stok -= $item->jumlah;
             $produk->update();
+        }
+
+        if($request->id_member != null){
+            $point = new Point();
+            $point->member_id = $request->id_member;
+            $point->penjualan_id = $penjualan->id_penjualan;
+            $point->amount = ($request->available_point != "#" && isset($request->use_point)) ? $request->available_point: $request->rewarded_point;
+            $point->status_id = (isset($request->use_point) ? 2 : 1);
+            $point->save();
         }
 
         return redirect()->route('transaksi.selesai');

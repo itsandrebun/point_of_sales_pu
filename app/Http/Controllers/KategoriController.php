@@ -19,7 +19,7 @@ class KategoriController extends Controller
 
     public function data()
     {
-        $kategori = Kategori::orderBy('id_kategori', 'desc')->get();
+        $kategori = Kategori::orderBy('id_kategori', 'desc')->where('active',1)->get();
 
         return datatables()
             ->of($kategori)
@@ -109,8 +109,7 @@ class KategoriController extends Controller
      */
     public function destroy($id)
     {
-        $kategori = Kategori::find($id);
-        $kategori->delete();
+        $kategori = Kategori::find($id)->update(['active' => -1]);
 
         return response(null, 204);
     }

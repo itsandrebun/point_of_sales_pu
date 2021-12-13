@@ -68,7 +68,7 @@
                     <div class="form-group row">
                         <label for="image" class="col-lg-2 col-lg-offset-1 control-label">Image</label>
                         <div class="col-lg-6">
-                            <input type="file" name="image" id="image" required>
+                            <input type="file" name="image" id="image">
                             <span class="help-block with-errors"></span>
                         </div>
                     </div>

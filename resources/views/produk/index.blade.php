@@ -54,6 +54,11 @@
 <script>
     let table;
 
+    function imgError(image){
+        image.onerror = null;
+        image.src = "{{ asset('img/7abfb941-cbb5-4c07-96d2-1aaa04310ae6.jpeg') }}";
+    }
+
     $(function () {
         table = $('.table').DataTable({
             responsive: true,
@@ -66,7 +71,13 @@
             columns: [
                 {data: 'select_all', searchable: false, sortable: false},
                 {data: 'DT_RowIndex', searchable: false, sortable: false},
-                {data: 'image'}, 
+                {
+                    data: 'image',
+                    orderable: false,
+                    render: function(data, type, row){
+                        return "<img src='"+data+"' style='width:10rem' onerror='imgError(this);'>";
+                    }
+                }, 
                 {data: 'kode_produk'},
                 {data: 'nama_produk'},
                 {data: 'nama_kategori'},
@@ -79,19 +90,19 @@
             ]
         });
 
-        $('#modal-form').validator().on('submit', function (e) {
-            if (! e.preventDefault()) {
-                $.post($('#modal-form form').attr('action'), $('#modal-form form').serialize())
-                    .done((response) => {
-                        $('#modal-form').modal('hide');
-                        table.ajax.reload();
-                    })
-                    .fail((errors) => {
-                        alert('Tidak dapat menyimpan data');
-                        return;
-                    });
-            }
-        });
+        // $('#modal-form').validator().on('submit', function (e) {
+        //     if (! e.preventDefault()) {
+        //         $.post($('#modal-form form').attr('action'), $('#modal-form form').serialize())
+        //             .done((response) => {
+        //                 $('#modal-form').modal('hide');
+        //                 table.ajax.reload();
+        //             })
+        //             .fail((errors) => {
+        //                 alert('Tidak dapat menyimpan data');
+        //                 return;
+        //             });
+        //     }
+        // });
 
         $('[name=select_all]').on('click', function () {
             $(':checkbox').prop('checked', this.checked);
@@ -106,6 +117,7 @@
         $('#modal-form form').attr('action', url);
         $('#modal-form [name=_method]').val('post');
         $('#modal-form [name=nama_produk]').focus();
+        $('#modal-form [name=image]').attr('required',true);
     }
 
     function editForm(url) {
@@ -116,6 +128,7 @@
         $('#modal-form form').attr('action', url);
         $('#modal-form [name=_method]').val('put');
         $('#modal-form [name=nama_produk]').focus();
+        $('#modal-form [name=image]').attr('required',false);
 
         $.get(url)
             .done((response) => {

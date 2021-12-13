@@ -101,8 +101,7 @@ class PaymentMethodController extends Controller
      */
     public function destroy($id)
     {
-        $payment_method = PaymentMethod::find($id);
-        $payment_method -> delete();
+        $payment_method = PaymentMethod::find($id)->update(['active' => -1]);
 
         return response(null, 204);
     }

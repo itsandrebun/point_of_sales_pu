@@ -14,8 +14,8 @@ class PenjualanDetailController extends Controller
 {
     public function index()
     {
-        $produk = Produk::orderBy('nama_produk')->get();
-        $member = Member::orderBy('nama')->get();
+        $produk = Produk::orderBy('nama_produk')->where('active',1)->where('stok','>=',1)->get();
+        $member = Member::orderBy('nama')->where('active',1)->get();
         $diskon = Setting::first()->diskon ?? 0;
         $payment_method = PaymentMethod::all()->pluck('method_name', 'method_id');
         
